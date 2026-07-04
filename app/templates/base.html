@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="LibraTrack – University Library Management System" />
+  <title>{% block title %}{{ title or 'LibraTrack' }}{% endblock %} | LibraTrack</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/>
+  <!-- Custom CSS -->
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet"/>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ NAVBAR ══ -->
+{% if current_user.is_authenticated %}
+<nav class="navbar navbar-expand-lg navbar-dark lms-navbar sticky-top">
+  <div class="container-fluid px-4">
+
+    <!-- Brand -->
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('main.index') }}">
+      <i class="bi bi-book-half fs-4"></i>
+      <span class="brand-name">LibraTrack</span>
+    </a>
+
+    <button class="navbar-toggler border-0" type="button"
+            data-bs-toggle="collapse" data-bs-target="#navbarMain">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarMain">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-3">
+
+        <!-- Dashboard -->
+        <li class="nav-item">
+          <a class="nav-link {% if request.blueprint == 'dashboard' %}active{% endif %}"
+             href="{{ url_for('dashboard.admin_dashboard') if current_user.can_manage else url_for('dashboard.member_dashboard') }}">
+            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+          </a>
+        </li>
+
+        <!-- Books -->
+        <li class="nav-item">
+          <a class="nav-link {% if request.blueprint == 'books' %}active{% endif %}"
+             href="{{ url_for('books.list_books') }}">
+            <i class="bi bi-journals me-1"></i>Books
+          </a>
+        </li>
+
+        {% if current_user.can_manage %}
+        <!-- Borrows (staff only) -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle {% if request.blueprint == 'borrow' %}active{% endif %}"
+             href="#" data-bs-toggle="dropdown">
+            <i class="bi bi-arrow-left-right me-1"></i>Borrows
+            {% if overdue_count > 0 %}
+            <span class="badge bg-danger rounded-pill ms-1">{{ overdue_count }}</span>
+            {% endif %}
+          </a>
+          <ul class="dropdown-menu shadow-sm border-0">
+            <li><a class="dropdown-item" href="{{ url_for('borrow.all_borrows') }}">
+              <i class="bi bi-list-ul me-2"></i>All Records</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('borrow.all_borrows', status='borrowed') }}">
+              <i class="bi bi-book me-2"></i>Currently Borrowed</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('borrow.overdue_borrows') }}">
+              <i class="bi bi-exclamation-triangle me-2 text-danger"></i>Overdue
+              {% if overdue_count > 0 %}
+              <span class="badge bg-danger ms-1">{{ overdue_count }}</span>
+              {% endif %}
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('borrow.all_fines') }}">
+              <i class="bi bi-currency-dollar me-2"></i>Fines</a></li>
+          </ul>
+        </li>
+
+        <!-- Reports -->
+        <li class="nav-item">
+          <a class="nav-link {% if request.blueprint == 'reports' %}active{% endif %}"
+             href="{{ url_for('reports.index') }}">
+            <i class="bi bi-bar-chart-line me-1"></i>Reports
+          </a>
+        </li>
+
+        <!-- Admin Menu -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle {% if request.blueprint == 'admin' %}active{% endif %}"
+             href="#" data-bs-toggle="dropdown">
+            <i class="bi bi-gear me-1"></i>Admin
+          </a>
+          <ul class="dropdown-menu shadow-sm border-0">
+            <li><a class="dropdown-item" href="{{ url_for('admin.user_list') }}">
+              <i class="bi bi-people me-2"></i>Users</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.create_user') }}">
+              <i class="bi bi-person-plus me-2"></i>Add User</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('books.list_categories') }}">
+              <i class="bi bi-tags me-2"></i>Categories</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('books.add_book') }}">
+              <i class="bi bi-plus-circle me-2"></i>Add Book</a></li>
+          </ul>
+        </li>
+        {% else %}
+        <!-- Member: My Borrows -->
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'borrow.my_borrows' %}active{% endif %}"
+             href="{{ url_for('borrow.my_borrows') }}">
+            <i class="bi bi-bookmark-check me-1"></i>My Borrows
+            {% if overdue_count > 0 %}
+            <span class="badge bg-danger rounded-pill ms-1">{{ overdue_count }}</span>
+            {% endif %}
+          </a>
+        </li>
+        {% endif %}
+
+      </ul>
+
+      <!-- Quick Search -->
+      <form class="d-flex me-3" action="{{ url_for('books.list_books') }}" method="get">
+        <div class="input-group input-group-sm">
+          <input class="form-control navbar-search" type="search" name="q"
+                 placeholder="Search books…" aria-label="Search">
+          <button class="btn btn-outline-light btn-sm" type="submit">
+            <i class="bi bi-search"></i>
+          </button>
+        </div>
+      </form>
+
+      <!-- User Menu -->
+      <ul class="navbar-nav">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle d-flex align-items-center gap-2"
+             href="#" data-bs-toggle="dropdown">
+            <div class="avatar-circle">
+              {{ current_user.first_name[0] }}{{ current_user.last_name[0] }}
+            </div>
+            <span class="d-none d-lg-inline">{{ current_user.first_name }}</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+            <li class="dropdown-header">
+              <strong>{{ current_user.full_name }}</strong><br>
+              <small class="text-muted">{{ current_user.role|title }}</small>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+              <i class="bi bi-person me-2"></i>Profile</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}">
+              <i class="bi bi-shield-lock me-2"></i>Change Password</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+              <i class="bi bi-box-arrow-right me-2"></i>Sign Out</a></li>
+          </ul>
+        </li>
+      </ul>
+
+    </div><!-- /collapse -->
+  </div>
+</nav>
+{% endif %}
+
+<!-- ═══════════════════════════════════════════════════ FLASH MSGS ══ -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:9999; margin-top:70px;">
+  {% for category, message in messages %}
+  <div class="toast show align-items-center text-bg-{{ 'danger' if category == 'error' else category }} border-0"
+       role="alert" data-bs-delay="5000">
+    <div class="d-flex">
+      <div class="toast-body">
+        <i class="bi bi-{% if category == 'success' %}check-circle{% elif category == 'danger' or category == 'error' %}x-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+        {{ message }}
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto"
+              data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<!-- ════════════════════════════════════════════════════ MAIN CONTENT ══ -->
+<main class="{% if current_user.is_authenticated %}lms-main{% endif %}">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- ═══════════════════════════════════════════════════════ FOOTER ══ -->
+{% if current_user.is_authenticated %}
+<footer class="lms-footer mt-auto py-3">
+  <div class="container-fluid px-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center">
+      <span class="text-muted small">
+        &copy; {{ now.year if now else 2024 }} LibraTrack &mdash; University Library Management System
+      </span>
+      <span class="text-muted small">
+        Logged in as <strong>{{ current_user.full_name }}</strong>
+        ({{ current_user.member_id }})
+      </span>
+    </div>
+  </div>
+</footer>
+{% endif %}
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<!-- Custom JS -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+
+<script>
+  // Auto-dismiss toasts
+  document.querySelectorAll('.toast').forEach(t => {
+    const toast = new bootstrap.Toast(t, { delay: 5000 });
+    toast.show();
+  });
+</script>
+</body>
+</html>

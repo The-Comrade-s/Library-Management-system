@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Active Members{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-people me-2"></i>Most Active Members</h1>
+  <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Reports</a>
+</div>
+{% if members %}
+<div class="lms-card">
+  <div class="table-responsive">
+    <table class="table lms-table mb-0">
+      <thead><tr><th>#</th><th>Member</th><th>Email</th><th>Member ID</th><th>Total Borrows</th><th>Unpaid Fines</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for user, count in members %}
+        <tr>
+          <td class="fw-700 text-muted">{{ loop.index }}</td>
+          <td><a href="{{ url_for('admin.user_detail', user_id=user.id) }}" class="fw-500 text-decoration-none">{{ user.full_name }}</a></td>
+          <td class="small text-muted">{{ user.email }}</td>
+          <td class="font-monospace small">{{ user.member_id }}</td>
+          <td><span class="badge bg-primary rounded-pill">{{ count }}</span></td>
+          <td class="{{ 'text-danger fw-600' if user.total_unpaid_fines > 0 else '' }}">${{ '%.2f'|format(user.total_unpaid_fines) }}</td>
+          <td><span class="badge {{ 'bg-success' if user.is_active else 'bg-secondary' }}">{{ 'Active' if user.is_active else 'Inactive' }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="empty-state"><i class="bi bi-people"></i><p>No member data yet.</p></div>
+{% endif %}
+{% endblock %}

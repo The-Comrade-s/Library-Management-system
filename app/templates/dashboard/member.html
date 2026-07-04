@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-house me-2"></i>My Dashboard</h1>
+  <span class="text-muted small">{{ current_user.member_id }}</span>
+</div>
+
+<!-- Alerts -->
+{% if overdue %}
+<div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+  <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+  <div>
+    <strong>{{ overdue|length }} book(s) overdue!</strong>
+    Please return them to avoid additional fines.
+    <a href="{{ url_for('borrow.my_borrows', status='borrowed') }}" class="alert-link ms-2">View now</a>
+  </div>
+</div>
+{% endif %}
+{% if due_soon %}
+<div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
+  <i class="bi bi-clock me-3 fs-4"></i>
+  <div>
+    <strong>{{ due_soon|length }} book(s) due within 3 days.</strong>
+    Please return them on time.
+  </div>
+</div>
+{% endif %}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-primary">
+      <i class="bi bi-book stat-icon"></i>
+      <div>
+        <div class="stat-value">{{ stats.active_borrows }}</div>
+        <div class="stat-label">Currently Borrowed</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-success">
+      <i class="bi bi-check-circle stat-icon"></i>
+      <div>
+        <div class="stat-value">{{ stats.total_returned }}</div>
+        <div class="stat-label">Books Returned</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-warning">
+      <i class="bi bi-bookmark stat-icon"></i>
+      <div>
+        <div class="stat-value">{{ stats.total_borrowed }}</div>
+        <div class="stat-label">Total Borrowed</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-danger">
+      <i class="bi bi-currency-dollar stat-icon"></i>
+      <div>
+        <div class="stat-value">${{ '%.2f'|format(stats.unpaid_fines) }}</div>
+        <div class="stat-label">Unpaid Fines</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Active Borrows -->
+  <div class="col-lg-8">
+    <div class="lms-card">
+      <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+        <h6 class="fw-600 mb-0"><i class="bi bi-book me-2"></i>Currently Borrowed</h6>
+        <a href="{{ url_for('books.list_books') }}" class="btn btn-sm btn-primary">
+          <i class="bi bi-search me-1"></i>Browse Books
+        </a>
+      </div>
+      {% if active_borrows %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr><th>Book</th><th>Borrowed</th><th>Due Date</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {% for b in active_borrows %}
+            <tr class="{{ 'overdue-row' if b.is_overdue else '' }}">
+              <td>
+                <div class="fw-500 small">{{ b.book.title }}</div>
+                <div class="text-muted" style="font-size:.75rem;">{{ b.book.author }}</div>
+              </td>
+              <td class="small">{{ b.borrow_date.strftime('%d %b %Y') }}</td>
+              <td class="small">
+                {{ b.due_date.strftime('%d %b %Y') }}
+                {% if b.is_overdue %}
+                  <br><span class="text-danger small">{{ b.days_overdue }}d overdue</span>
+                {% elif b.days_remaining <= 3 %}
+                  <br><span class="text-warning small">{{ b.days_remaining }}d left</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if b.is_overdue %}
+                  <span class="badge badge-overdue">Overdue</span>
+                {% else %}
+                  <span class="badge badge-borrowed">Borrowed</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state py-5">
+        <i class="bi bi-book"></i>
+        <p>You have no active borrows.</p>
+        <a href="{{ url_for('books.list_books') }}" class="btn btn-primary btn-sm">Browse Books</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Sidebar: Fines + History -->
+  <div class="col-lg-4">
+    {% if unpaid_fines %}
+    <div class="lms-card mb-4">
+      <div class="p-3 border-bottom">
+        <h6 class="fw-600 mb-0 text-danger"><i class="bi bi-currency-dollar me-2"></i>Unpaid Fines</h6>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for fine in unpaid_fines %}
+        <div class="list-group-item px-3 py-2 d-flex justify-content-between">
+          <div>
+            <div class="small fw-500">{{ fine.borrow.book.title }}</div>
+            <div class="text-muted" style="font-size:.75rem;">{{ fine.days_overdue }} days overdue</div>
+          </div>
+          <span class="badge bg-danger">${{ '%.2f'|format(fine.amount_float) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="p-3 border-top">
+        <div class="d-flex justify-content-between fw-600">
+          <span>Total Owed:</span>
+          <span class="text-danger">${{ '%.2f'|format(stats.unpaid_fines) }}</span>
+        </div>
+        <small class="text-muted">Please pay at the library desk.</small>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent History -->
+    <div class="lms-card">
+      <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+        <h6 class="fw-600 mb-0"><i class="bi bi-clock-history me-2"></i>Recent History</h6>
+        <a href="{{ url_for('borrow.my_borrows') }}" class="btn btn-sm btn-outline-secondary">All</a>
+      </div>
+      {% if borrow_history %}
+      <div class="list-group list-group-flush">
+        {% for b in borrow_history %}
+        <div class="list-group-item px-3 py-2">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="small" style="max-width:170px;">
+              <div class="fw-500" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                {{ b.book.title }}
+              </div>
+              <div class="text-muted" style="font-size:.72rem;">{{ b.borrow_date.strftime('%d %b %Y') }}</div>
+            </div>
+            {% if b.status == 'returned' %}
+              <span class="badge badge-returned">Returned</span>
+            {% elif b.is_overdue %}
+              <span class="badge badge-overdue">Overdue</span>
+            {% else %}
+              <span class="badge badge-borrowed">Borrowed</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state py-3"><p class="small">No history yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

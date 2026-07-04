@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Overdue Books{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Overdue Books</h1>
+  <a href="{{ url_for('reports.export_overdue_csv') }}" class="btn btn-outline-success btn-sm">
+    <i class="bi bi-download me-1"></i>Export CSV
+  </a>
+</div>
+
+{% if overdue %}
+<div class="alert alert-danger">
+  <strong>{{ overdue|length }} overdue book(s).</strong>
+  Total potential fines: <strong>${{ '%.2f'|format(overdue|sum(attribute='calculated_fine')) }}</strong>
+</div>
+
+<div class="lms-card">
+  <div class="table-responsive">
+    <table class="table lms-table mb-0">
+      <thead>
+        <tr><th>Member</th><th>Book</th><th>Due Date</th><th>Days Overdue</th><th>Est. Fine</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        {% for b in overdue %}
+        <tr class="overdue-row">
+          <td>
+            <div class="fw-500 small">{{ b.user.full_name }}</div>
+            <div class="text-muted" style="font-size:.72rem;">{{ b.user.member_id }} · {{ b.user.email }}</div>
+          </td>
+          <td>
+            <a href="{{ url_for('books.book_detail', book_id=b.book_id) }}" class="small fw-500 text-decoration-none">
+              {{ b.book.title }}
+            </a>
+          </td>
+          <td class="small text-danger fw-600">{{ b.due_date.strftime('%d %b %Y') }}</td>
+          <td><span class="badge bg-danger">{{ b.days_overdue }} days</span></td>
+          <td class="fw-600 text-danger">${{ '%.2f'|format(b.calculated_fine) }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('borrow.return_book', borrow_id=b.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-success"
+                      data-confirm="Mark returned? A fine of ${{ '%.2f'|format(b.calculated_fine) }} will be applied.">
+                <i class="bi bi-check-circle me-1"></i>Return
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="bi bi-check-circle text-success" style="font-size:4rem;opacity:1;"></i>
+  <p class="text-success fw-600 fs-5 mt-3">No overdue books! Great job.</p>
+</div>
+{% endif %}
+{% endblock %}

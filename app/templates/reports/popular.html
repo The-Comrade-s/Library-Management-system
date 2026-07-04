@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Popular Books{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-star me-2"></i>Most Popular Books</h1>
+  <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Reports</a>
+</div>
+{% if popular %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="lms-card">
+      <div class="table-responsive">
+        <table class="table lms-table mb-0">
+          <thead><tr><th>#</th><th>Book</th><th>Author</th><th>Category</th><th>Borrows</th><th>Available</th></tr></thead>
+          <tbody>
+            {% for book, count in popular %}
+            <tr>
+              <td class="fw-700 text-muted">{{ loop.index }}</td>
+              <td><a href="{{ url_for('books.book_detail', book_id=book.id) }}" class="fw-500 small text-decoration-none">{{ book.title }}</a></td>
+              <td class="small text-muted">{{ book.author }}</td>
+              <td class="small">{{ book.category.name if book.category else '—' }}</td>
+              <td><span class="badge bg-primary rounded-pill">{{ count }}×</span></td>
+              <td>
+                <span class="badge {{ 'bg-success' if book.is_available else 'bg-secondary' }}">
+                  {{ book.available_copies }}/{{ book.total_copies }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="lms-card p-4">
+      <h6 class="fw-600 mb-3">Borrow Frequency</h6>
+      <div class="chart-container"><canvas id="popularChart"></canvas></div>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="empty-state"><i class="bi bi-star"></i><p>No borrow data yet.</p></div>
+{% endif %}
+{% endblock %}
+{% block extra_js %}
+{% if popular %}
+<script>
+const labels = {{ popular|map(attribute=0)|map(attribute='title')|map('truncate', 20, true, '…')|list|tojson }};
+const counts = {{ popular|map(attribute=1)|list|tojson }};
+LMS.barChart('popularChart', labels, counts, 'Borrows');
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-bar-chart-line me-2"></i>Reports & Analytics</h1>
+</div>
+
+<div class="row g-4">
+  {% set reports = [
+    ('reports.borrowed_report',   'bi-book',                'Borrowed Books',    'List of all currently borrowed books with dates.',           'primary'),
+    ('reports.overdue_report',    'bi-exclamation-triangle','Overdue Books',     'Books past their due date with estimated fines.',            'danger'),
+    ('reports.popular_books',     'bi-star',                'Popular Books',     'Most frequently borrowed books ranked by borrow count.',     'warning'),
+    ('reports.active_members',    'bi-people',              'Active Members',    'Members ranked by number of books borrowed.',                'info'),
+    ('reports.fines_summary',     'bi-currency-dollar',     'Fines Summary',     'Overview of paid, unpaid, and waived fines.',                'success'),
+    ('reports.inventory',         'bi-archive',             'Inventory Report',  'Full book inventory with availability status.',              'secondary'),
+  ] %}
+  {% for endpoint, icon, title, desc, color in reports %}
+  <div class="col-md-6 col-lg-4">
+    <a href="{{ url_for(endpoint) }}" class="text-decoration-none">
+      <div class="lms-card p-4 h-100 d-flex gap-3 align-items-start">
+        <div class="avatar-circle flex-shrink-0" style="width:52px;height:52px;font-size:1.4rem;background:var(--bs-{{ color }});">
+          <i class="bi {{ icon }}"></i>
+        </div>
+        <div>
+          <h6 class="fw-600 mb-1 text-dark">{{ title }}</h6>
+          <p class="text-muted small mb-0">{{ desc }}</p>
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+
+  <!-- CSV Export -->
+  <div class="col-md-6 col-lg-4">
+    <a href="{{ url_for('reports.export_overdue_csv') }}" class="text-decoration-none">
+      <div class="lms-card p-4 h-100 d-flex gap-3 align-items-start">
+        <div class="avatar-circle flex-shrink-0" style="width:52px;height:52px;font-size:1.4rem;background:#20c997;">
+          <i class="bi bi-download"></i>
+        </div>
+        <div>
+          <h6 class="fw-600 mb-1 text-dark">Export Overdue (CSV)</h6>
+          <p class="text-muted small mb-0">Download overdue books data as a CSV file.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+{% endblock %}

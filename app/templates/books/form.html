@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit Book' if action == 'edit' else 'Add New Book' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">
+    <i class="bi bi-{{ 'pencil' if action == 'edit' else 'plus-circle' }} me-2"></i>
+    {{ 'Edit Book' if action == 'edit' else 'Add New Book' }}
+  </h1>
+  <a href="{{ url_for('books.list_books') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>Back to Books
+  </a>
+</div>
+
+<form method="POST" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="row g-4">
+    <!-- Left column -->
+    <div class="col-lg-8">
+
+      <div class="lms-card p-4 mb-4">
+        <h6 class="fw-600 mb-3 text-primary-lms"><i class="bi bi-info-circle me-2"></i>Book Information</h6>
+        <div class="row g-3">
+          <div class="col-12">
+            {{ form.title.label(class="form-label fw-500") }}
+            {{ form.title(class="form-control" + (' is-invalid' if form.title.errors else ''), placeholder="Full book title") }}
+            {% for e in form.title.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="col-md-8">
+            {{ form.author.label(class="form-label fw-500") }}
+            {{ form.author(class="form-control" + (' is-invalid' if form.author.errors else ''), placeholder="Author name(s)") }}
+            {% for e in form.author.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="col-md-4">
+            {{ form.isbn.label(class="form-label fw-500") }}
+            {{ form.isbn(class="form-control" + (' is-invalid' if form.isbn.errors else ''), placeholder="e.g. 9780140449136") }}
+            {% for e in form.isbn.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="col-md-6">
+            {{ form.publisher.label(class="form-label fw-500") }}
+            {{ form.publisher(class="form-control", placeholder="Publisher name") }}
+          </div>
+          <div class="col-md-3">
+            {{ form.publication_year.label(class="form-label fw-500") }}
+            {{ form.publication_year(class="form-control", placeholder="e.g. 2023") }}
+          </div>
+          <div class="col-md-3">
+            {{ form.edition.label(class="form-label fw-500") }}
+            {{ form.edition(class="form-control", placeholder="e.g. 3rd") }}
+          </div>
+          <div class="col-md-4">
+            {{ form.language.label(class="form-label fw-500") }}
+            {{ form.language(class="form-control", placeholder="English") }}
+          </div>
+          <div class="col-md-4">
+            {{ form.pages.label(class="form-label fw-500") }}
+            {{ form.pages(class="form-control", placeholder="Number of pages") }}
+          </div>
+          <div class="col-md-4">
+            {{ form.category_id.label(class="form-label fw-500") }}
+            {{ form.category_id(class="form-select") }}
+          </div>
+          <div class="col-12">
+            {{ form.description.label(class="form-label fw-500") }}
+            {{ form.description(class="form-control", rows=4, placeholder="Brief description or synopsis…") }}
+          </div>
+        </div>
+      </div>
+
+      <div class="lms-card p-4">
+        <h6 class="fw-600 mb-3 text-primary-lms"><i class="bi bi-archive me-2"></i>Library Details</h6>
+        <div class="row g-3">
+          <div class="col-md-4">
+            {{ form.barcode.label(class="form-label fw-500") }}
+            {{ form.barcode(class="form-control font-monospace", placeholder="Auto-generated if blank") }}
+          </div>
+          <div class="col-md-4">
+            {{ form.shelf_location.label(class="form-label fw-500") }}
+            {{ form.shelf_location(class="form-control", placeholder="e.g. A-12") }}
+          </div>
+          <div class="col-md-4">
+            {{ form.total_copies.label(class="form-label fw-500") }}
+            {{ form.total_copies(class="form-control" + (' is-invalid' if form.total_copies.errors else ''), min=1) }}
+            {% for e in form.total_copies.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="col-12">
+            <div class="form-check form-switch">
+              {{ form.is_active(class="form-check-input", role="switch") }}
+              {{ form.is_active.label(class="form-check-label fw-500") }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right column: Cover -->
+    <div class="col-lg-4">
+      <div class="lms-card p-4 text-center">
+        <h6 class="fw-600 mb-3 text-primary-lms"><i class="bi bi-image me-2"></i>Cover Image</h6>
+
+        {% if action == 'edit' and book and book.cover_image %}
+        <img id="coverPreview"
+             src="{{ url_for('static', filename='images/covers/' + book.cover_image) }}"
+             alt="Cover" class="img-fluid rounded mb-3 shadow-sm" style="max-height:250px;">
+        {% else %}
+        <img id="coverPreview"
+             src="https://via.placeholder.com/200x280/e9ecef/adb5bd?text=No+Cover"
+             alt="Cover" class="img-fluid rounded mb-3" style="max-height:250px;">
+        {% endif %}
+
+        {{ form.cover_image.label(class="form-label fw-500") }}
+        {{ form.cover_image(class="form-control", id="cover_image", accept="image/*") }}
+        {% for e in form.cover_image.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+        <small class="text-muted d-block mt-2">JPG, PNG, GIF or WebP. Max 16MB.</small>
+      </div>
+
+      <!-- Save button card -->
+      <div class="lms-card p-4 mt-4">
+        {{ form.submit(class="btn btn-primary w-100 py-2 fw-600 mb-2") }}
+        <a href="{{ url_for('books.list_books') }}" class="btn btn-outline-secondary w-100">Cancel</a>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

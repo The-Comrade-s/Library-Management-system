@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Inventory Report{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-archive me-2"></i>Inventory Report</h1>
+  <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Reports</a>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-md-4"><div class="stat-card stat-primary"><i class="bi bi-journals stat-icon"></i><div><div class="stat-value">{{ total_copies }}</div><div class="stat-label">Total Copies</div></div></div></div>
+  <div class="col-md-4"><div class="stat-card stat-success"><i class="bi bi-check-circle stat-icon"></i><div><div class="stat-value">{{ available }}</div><div class="stat-label">Available</div></div></div></div>
+  <div class="col-md-4"><div class="stat-card stat-warning"><i class="bi bi-arrow-left-right stat-icon"></i><div><div class="stat-value">{{ borrowed }}</div><div class="stat-label">Currently Borrowed</div></div></div></div>
+</div>
+<div class="lms-card">
+  <div class="table-responsive">
+    <table class="table lms-table mb-0">
+      <thead><tr><th>Title</th><th>Author</th><th>ISBN</th><th>Category</th><th>Total</th><th>Available</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for book in books %}
+        <tr>
+          <td><a href="{{ url_for('books.book_detail', book_id=book.id) }}" class="small fw-500 text-decoration-none">{{ book.title }}</a></td>
+          <td class="small text-muted">{{ book.author }}</td>
+          <td class="font-monospace small">{{ book.isbn or '—' }}</td>
+          <td class="small">{{ book.category.name if book.category else '—' }}</td>
+          <td class="text-center">{{ book.total_copies }}</td>
+          <td class="text-center"><span class="fw-700 {{ 'text-success' if book.available_copies > 0 else 'text-danger' }}">{{ book.available_copies }}</span></td>
+          <td><span class="badge {{ 'bg-success' if book.is_available else ('bg-secondary' if book.available_copies == 0 else 'bg-warning text-dark') }}">{{ book.availability_status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

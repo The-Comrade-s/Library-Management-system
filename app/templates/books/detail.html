@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}{{ book.title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item"><a href="{{ url_for('books.list_books') }}">Books</a></li>
+      <li class="breadcrumb-item active">{{ book.title[:40] }}{% if book.title|length > 40 %}…{% endif %}</li>
+    </ol>
+  </nav>
+  {% if current_user.can_manage %}
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('books.edit_book', book_id=book.id) }}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-pencil me-1"></i>Edit
+    </a>
+    <form method="POST" action="{{ url_for('books.delete_book', book_id=book.id) }}">
+      {{ csrf_token() if csrf_token is defined else '' }}
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-outline-danger btn-sm"
+              data-confirm="Delete '{{ book.title }}'? This cannot be undone.">
+        <i class="bi bi-trash me-1"></i>Delete
+      </button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+<div class="row g-4">
+  <!-- Cover + Quick Info -->
+  <div class="col-md-3 col-lg-2">
+    <img src="{{ url_for('static', filename='images/covers/' + (book.cover_image or 'default_cover.jpg')) }}"
+         alt="{{ book.title }}"
+         class="img-fluid rounded shadow-sm w-100"
+         style="max-width:220px;"
+         onerror="this.src='https://via.placeholder.com/200x300/1a3a5c/ffffff?text=No+Cover'">
+
+    <!-- Availability badge -->
+    <div class="mt-3 text-center">
+      {% if book.is_available %}
+      <span class="badge bg-success px-3 py-2 fs-6">
+        <i class="bi bi-check-circle me-1"></i>Available
+      </span>
+      {% else %}
+      <span class="badge bg-secondary px-3 py-2 fs-6">
+        <i class="bi bi-x-circle me-1"></i>Fully Borrowed
+      </span>
+      {% endif %}
+      <div class="text-muted small mt-1">
+        {{ book.available_copies }} of {{ book.total_copies }} copies available
+      </div>
+    </div>
+
+    <!-- Borrow button -->
+    {% if not current_user.can_manage %}
+      {% if not user_has_borrowed and book.is_available %}
+      <form method="POST" action="{{ url_for('borrow.self_borrow', book_id=book.id) }}" class="mt-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-primary w-100"
+                data-confirm="Borrow '{{ book.title }}'?">
+          <i class="bi bi-bookmark-plus me-1"></i>Borrow This Book
+        </button>
+      </form>
+      {% elif user_has_borrowed %}
+      <div class="alert alert-info mt-3 small p-2 text-center">
+        You currently have this book borrowed.
+      </div>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <!-- Details -->
+  <div class="col-md-9 col-lg-10">
+    <div class="lms-card p-4 mb-4">
+      <h2 class="fw-700 mb-1" style="font-family:'Playfair Display',serif;color:var(--lms-primary);">
+        {{ book.title }}
+      </h2>
+      <p class="fs-5 text-muted mb-3">by <strong>{{ book.author }}</strong></p>
+
+      {% if book.description %}
+      <p class="text-muted lh-lg mb-4">{{ book.description }}</p>
+      {% endif %}
+
+      <div class="row g-3">
+        {% if book.isbn %}
+        <div class="col-sm-4">
+          <small class="text-muted text-uppercase fw-600 d-block">ISBN</small>
+          <span class="font-monospace">{{ book.isbn }}</span>
+        </div>
+        {% endif %}
+        {% if book.publisher %}
+        <div class="col-sm-4">
+          <small class="text-muted text-uppercase fw-600 d-block">Publisher</small>
+          {{ book.publisher }}
+        </div>
+        {% endif %}
+        {% if book.publication_year %}
+        <div class="col-sm-4">
+          <small class="text-muted text-uppercase fw-600 d-block">Year</small>
+          {{ book.publication_year }}
+        </div>
+        {% endif %}
+        {% if book.category %}
+        <div class="col-sm-4">
+          <small class="text-muted text-uppercase fw-600 d-block">Category</small>
+          <a href="{{ url_for('books.list_books', category=book.category_id) }}">{{ book.category.name }}</a>
+        </div>
+        {% endif %}
+        {% if book.language %}
+        <div class="col-sm-4">
+          <small class="text-muted text-uppercase fw-600 d-block">Language</small>
+          {{ book.language }}
+        </div>
+        {% endif %}
+        {% if book.pages %}
+        <div class="col-sm-4">
+          <small class="text-muted text-uppercase fw-600 d-block">Pages</small>
+          {{ book.pages }}
+        </div>
+        {% endif %}
+        {% if book.edition %}
+        <div class="col-sm-4">
+          <small class="text-muted text-uppercase fw-600 d-block">Edition</small>
+          {{ book.edition }}
+        </div>
+        {% endif %}
+        {% if book.barcode %}
+        <div class="col-sm-4">
+          <small class="text-muted text-uppercase fw-600 d-block">Barcode</small>
+          <span class="font-monospace">{{ book.barcode }}</span>
+        </div>
+        {% endif %}
+        {% if book.shelf_location %}
+        <div class="col-sm-4">
+          <small class="text-muted text-uppercase fw-600 d-block">Shelf</small>
+          {{ book.shelf_location }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Issue to Member (staff) -->
+    {% if current_user.can_manage %}
+    <div class="lms-card p-4 mb-4">
+      <h6 class="fw-600 mb-3"><i class="bi bi-person-plus me-2"></i>Issue to Member</h6>
+      {% if book.is_available %}
+      <form method="POST" action="{{ url_for('borrow.issue_book', book_id=book.id) }}"
+            class="row g-2 align-items-end">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" id="selectedMemberId" name="user_id">
+        <div class="col-md-6">
+          <label class="form-label small fw-500">Search Member</label>
+          <input type="text" id="memberSearch" class="form-control"
+                 placeholder="Name, Member ID, or email…" autocomplete="off">
+          <ul id="memberResults" class="list-group position-absolute z-3 w-auto shadow"
+              style="min-width:340px; max-height:220px; overflow-y:auto;"></ul>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-primary w-100"
+                  onclick="return document.getElementById('selectedMemberId').value || (alert('Select a member first') && false)">
+            <i class="bi bi-bookmark-plus me-1"></i>Issue Book
+          </button>
+        </div>
+      </form>
+      {% else %}
+      <div class="alert alert-warning mb-0">No copies available to issue.</div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Borrow History (staff view) -->
+    {% if current_user.can_manage and borrow_history %}
+    <div class="lms-card">
+      <div class="p-3 border-bottom">
+        <h6 class="fw-600 mb-0"><i class="bi bi-clock-history me-2"></i>Borrow History</h6>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+          <thead class="table-light">
+            <tr><th>Member</th><th>Borrowed</th><th>Due</th><th>Returned</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {% for b in borrow_history %}
+            <tr>
+              <td class="small">{{ b.user.full_name }}</td>
+              <td class="small">{{ b.borrow_date.strftime('%d %b %Y') }}</td>
+              <td class="small">{{ b.due_date.strftime('%d %b %Y') }}</td>
+              <td class="small">{{ b.return_date.strftime('%d %b %Y') if b.return_date else '—' }}</td>
+              <td>
+                {% if b.status == 'returned' %}
+                  <span class="badge badge-returned">Returned</span>
+                {% elif b.is_overdue %}
+                  <span class="badge badge-overdue">Overdue</span>
+                {% else %}
+                  <span class="badge badge-borrowed">Borrowed</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

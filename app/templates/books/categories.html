@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Categories{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-tags me-2"></i>Book Categories</h1>
+  {% if current_user.can_manage %}
+  <a href="{{ url_for('books.add_category') }}" class="btn btn-primary">
+    <i class="bi bi-plus-circle me-2"></i>Add Category
+  </a>
+  {% endif %}
+</div>
+
+<div class="row g-3">
+  {% for cat in categories %}
+  <div class="col-sm-6 col-md-4 col-lg-3">
+    <div class="lms-card p-4 h-100">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <h6 class="fw-600 mb-0">{{ cat.name }}</h6>
+        <span class="badge bg-primary rounded-pill">{{ cat.book_count }}</span>
+      </div>
+      {% if cat.description %}
+      <p class="text-muted small mb-3">{{ cat.description }}</p>
+      {% endif %}
+      <div class="mt-auto pt-2 d-flex gap-2">
+        <a href="{{ url_for('books.list_books', category=cat.id) }}"
+           class="btn btn-outline-primary btn-sm flex-grow-1">
+          <i class="bi bi-journals me-1"></i>Books
+        </a>
+        {% if current_user.can_manage %}
+        <a href="{{ url_for('books.edit_category', cat_id=cat.id) }}"
+           class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-pencil"></i>
+        </a>
+        <form method="POST" action="{{ url_for('books.delete_category', cat_id=cat.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-outline-danger btn-sm"
+                  data-confirm="Delete category '{{ cat.name }}'?">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12">
+    <div class="empty-state">
+      <i class="bi bi-tags"></i>
+      <p>No categories yet. <a href="{{ url_for('books.add_category') }}">Add the first one.</a></p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

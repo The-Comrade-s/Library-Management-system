@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Borrow Records{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-arrow-left-right me-2"></i>Borrow Records</h1>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('borrow.overdue_borrows') }}" class="btn btn-outline-danger btn-sm">
+      <i class="bi bi-exclamation-triangle me-1"></i>Overdue
+    </a>
+    <a href="{{ url_for('borrow.all_fines') }}" class="btn btn-outline-warning btn-sm">
+      <i class="bi bi-currency-dollar me-1"></i>Fines
+    </a>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="lms-card p-3 mb-4">
+  <form method="GET" class="row g-2 align-items-end">
+    <div class="col-md-5">
+      <input type="text" name="q" class="form-control" placeholder="Search member, book…" value="{{ q }}">
+    </div>
+    <div class="col-md-4">
+      <select name="status" class="form-select" data-autosubmit>
+        <option value="all" {{ 'selected' if status=='all' }}>All Status</option>
+        <option value="borrowed" {{ 'selected' if status=='borrowed' }}>Currently Borrowed</option>
+        <option value="returned" {{ 'selected' if status=='returned' }}>Returned</option>
+        <option value="overdue" {{ 'selected' if status=='overdue' }}>Overdue</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-primary w-100">Search</button>
+    </div>
+  </form>
+</div>
+
+{% if borrows.items %}
+<div class="lms-card">
+  <div class="table-responsive">
+    <table class="table lms-table mb-0">
+      <thead>
+        <tr>
+          <th>#</th><th>Member</th><th>Book</th><th>Borrowed</th>
+          <th>Due Date</th><th>Returned</th><th>Status</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in borrows.items %}
+        <tr class="{{ 'overdue-row' if b.is_overdue and b.status != 'returned' else '' }}">
+          <td class="text-muted small">{{ b.id }}</td>
+          <td>
+            <a href="{{ url_for('admin.user_detail', user_id=b.user_id) }}" class="text-decoration-none">
+              <div class="fw-500 small">{{ b.user.full_name }}</div>
+              <div class="text-muted" style="font-size:.72rem;">{{ b.user.member_id }}</div>
+            </a>
+          </td>
+          <td>
+            <a href="{{ url_for('books.book_detail', book_id=b.book_id) }}" class="text-decoration-none">
+              <div class="small fw-500" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                {{ b.book.title }}
+              </div>
+            </a>
+          </td>
+          <td class="small">{{ b.borrow_date.strftime('%d %b %Y') }}</td>
+          <td class="small">
+            {{ b.due_date.strftime('%d %b %Y') }}
+            {% if b.is_overdue and b.status != 'returned' %}
+            <br><span class="text-danger" style="font-size:.72rem;">{{ b.days_overdue }}d overdue</span>
+            {% endif %}
+          </td>
+          <td class="small">{{ b.return_date.strftime('%d %b %Y') if b.return_date else '—' }}</td>
+          <td>
+            {% if b.status == 'returned' %}
+              <span class="badge badge-returned">Returned</span>
+            {% elif b.is_overdue %}
+              <span class="badge badge-overdue">Overdue</span>
+            {% else %}
+              <span class="badge badge-borrowed">Borrowed</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if b.status == 'borrowed' %}
+            <form method="POST" action="{{ url_for('borrow.return_book', borrow_id=b.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-success"
+                      data-confirm="Mark '{{ b.book.title }}' as returned?"
+                      data-bs-toggle="tooltip" title="Return book">
+                <i class="bi bi-check-circle me-1"></i>Return
+              </button>
+            </form>
+            {% else %}
+              <span class="text-muted small">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Pagination -->
+{% if borrows.pages > 1 %}
+<nav class="mt-4 d-flex justify-content-center">
+  <ul class="pagination">
+    {% if borrows.has_prev %}
+    <li class="page-item">
+      <a class="page-link" href="{{ url_for('borrow.all_borrows', page=borrows.prev_num, status=status, q=q) }}">
+        <i class="bi bi-chevron-left"></i></a>
+    </li>
+    {% endif %}
+    {% for p in borrows.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+      {% if p %}
+      <li class="page-item {{ 'active' if p == borrows.page }}">
+        <a class="page-link" href="{{ url_for('borrow.all_borrows', page=p, status=status, q=q) }}">{{ p }}</a>
+      </li>
+      {% else %}
+      <li class="page-item disabled"><span class="page-link">…</span></li>
+      {% endif %}
+    {% endfor %}
+    {% if borrows.has_next %}
+    <li class="page-item">
+      <a class="page-link" href="{{ url_for('borrow.all_borrows', page=borrows.next_num, status=status, q=q) }}">
+        <i class="bi bi-chevron-right"></i></a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+  <i class="bi bi-inbox"></i>
+  <p>No borrow records found.</p>
+</div>
+{% endif %}
+{% endblock %}

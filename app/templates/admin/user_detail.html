@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}{{ user.full_name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item"><a href="{{ url_for('admin.user_list') }}">Users</a></li>
+      <li class="breadcrumb-item active">{{ user.full_name }}</li>
+    </ol>
+  </nav>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-pencil me-1"></i>Edit
+    </a>
+    {% if user.id != current_user.id %}
+    <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-outline-danger btn-sm"
+              data-confirm="Permanently delete {{ user.full_name }}?">
+        <i class="bi bi-trash me-1"></i>Delete
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Profile -->
+  <div class="col-md-4">
+    <div class="lms-card p-4 text-center mb-4">
+      <div class="avatar-circle mx-auto mb-3" style="width:72px;height:72px;font-size:1.8rem;">
+        {{ user.first_name[0] }}{{ user.last_name[0] }}
+      </div>
+      <h5 class="fw-700">{{ user.full_name }}</h5>
+      <span class="badge {{ 'bg-danger' if user.is_admin else ('bg-warning text-dark' if user.is_librarian else 'bg-primary') }} mb-2">
+        {{ user.role|title }}
+      </span>
+      <span class="badge {{ 'bg-success' if user.is_active else 'bg-secondary' }} ms-1 mb-2">
+        {{ 'Active' if user.is_active else 'Inactive' }}
+      </span>
+      <div class="text-muted small mt-2">
+        <p class="mb-1"><i class="bi bi-credit-card me-1"></i>{{ user.member_id }}</p>
+        <p class="mb-1"><i class="bi bi-envelope me-1"></i>{{ user.email }}</p>
+        {% if user.phone %}<p class="mb-1"><i class="bi bi-telephone me-1"></i>{{ user.phone }}</p>{% endif %}
+        {% if user.address %}<p class="mb-1"><i class="bi bi-geo-alt me-1"></i>{{ user.address }}</p>{% endif %}
+        <p class="mb-1"><i class="bi bi-calendar me-1"></i>Joined {{ user.created_at.strftime('%d %b %Y') }}</p>
+        {% if user.last_login %}
+        <p class="mb-0"><i class="bi bi-clock me-1"></i>Last login {{ user.last_login.strftime('%d %b %Y') }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="lms-card p-3 mb-4">
+      <div class="row g-2 text-center">
+        <div class="col-6">
+          <div class="fw-700 fs-4 text-primary">{{ user.active_borrows_count }}</div>
+          <div class="text-muted small">Active Borrows</div>
+        </div>
+        <div class="col-6">
+          <div class="fw-700 fs-4 text-danger">${{ '%.2f'|format(user.total_unpaid_fines) }}</div>
+          <div class="text-muted small">Unpaid Fines</div>
+        </div>
+        <div class="col-6">
+          <div class="fw-700 fs-4 text-success">{{ user.borrows.filter_by(status='returned').count() }}</div>
+          <div class="text-muted small">Returned</div>
+        </div>
+        <div class="col-6">
+          <div class="fw-700 fs-4">{{ user.borrows.count() }}</div>
+          <div class="text-muted small">Total Borrows</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reset Password -->
+    <div class="lms-card p-3">
+      <h6 class="fw-600 mb-3"><i class="bi bi-shield-lock me-2"></i>Reset Password</h6>
+      <form method="POST" action="{{ url_for('admin.reset_user_password', user_id=user.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-2">
+          <input type="password" name="new_password" class="form-control form-control-sm"
+                 placeholder="New password (min 8 chars)" minlength="8" required>
+        </div>
+        <button type="submit" class="btn btn-warning btn-sm w-100"
+                data-confirm="Reset password for {{ user.full_name }}?">
+          <i class="bi bi-key me-1"></i>Reset Password
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Borrow History -->
+  <div class="col-md-8">
+    <div class="lms-card mb-4">
+      <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+        <h6 class="fw-600 mb-0"><i class="bi bi-clock-history me-2"></i>Borrow History</h6>
+        <span class="badge bg-secondary">{{ borrows|length }}</span>
+      </div>
+      {% if borrows %}
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+          <thead class="table-light">
+            <tr><th>Book</th><th>Borrowed</th><th>Due</th><th>Returned</th><th>Status</th><th>Fine</th></tr>
+          </thead>
+          <tbody>
+            {% for b in borrows %}
+            <tr class="{{ 'overdue-row' if b.is_overdue and b.status != 'returned' else '' }}">
+              <td class="small">
+                <a href="{{ url_for('books.book_detail', book_id=b.book_id) }}" class="text-decoration-none">
+                  {{ b.book.title[:35] }}{% if b.book.title|length > 35 %}…{% endif %}
+                </a>
+              </td>
+              <td class="small">{{ b.borrow_date.strftime('%d %b %Y') }}</td>
+              <td class="small">{{ b.due_date.strftime('%d %b %Y') }}</td>
+              <td class="small">{{ b.return_date.strftime('%d %b %Y') if b.return_date else '—' }}</td>
+              <td>
+                {% if b.status == 'returned' %}<span class="badge badge-returned">Returned</span>
+                {% elif b.is_overdue %}<span class="badge badge-overdue">Overdue</span>
+                {% else %}<span class="badge badge-borrowed">Borrowed</span>
+                {% endif %}
+              </td>
+              <td class="small">
+                {% if b.fine %}
+                  <span class="{{ 'text-success' if b.fine.is_paid else 'text-danger' }}">
+                    ${{ '%.2f'|format(b.fine.amount_float) }}
+                  </span>
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state py-4"><i class="bi bi-book"></i><p>No borrows yet.</p></div>
+      {% endif %}
+    </div>
+
+    <!-- Fines -->
+    {% if fines %}
+    <div class="lms-card">
+      <div class="p-3 border-bottom">
+        <h6 class="fw-600 mb-0"><i class="bi bi-currency-dollar me-2"></i>Fine History</h6>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr><th>Book</th><th>Amount</th><th>Status</th><th>Date</th><th>Receipt</th></tr>
+          </thead>
+          <tbody>
+            {% for fine in fines %}
+            <tr>
+              <td class="small">{{ fine.borrow.book.title[:30] }}…</td>
+              <td class="small fw-600">${{ '%.2f'|format(fine.amount_float) }}</td>
+              <td>
+                {% if fine.status == 'paid' %}<span class="badge badge-paid">Paid</span>
+                {% elif fine.status == 'waived' %}<span class="badge badge-waived">Waived</span>
+                {% else %}<span class="badge badge-unpaid">Unpaid</span>
+                {% endif %}
+              </td>
+              <td class="small">{{ fine.paid_at.strftime('%d %b %Y') if fine.paid_at else fine.created_at.strftime('%d %b %Y') }}</td>
+              <td class="small font-monospace">{{ fine.receipt_number or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

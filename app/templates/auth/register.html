@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center py-5"
+     style="background:linear-gradient(135deg,#1a3a5c 0%,#2d6099 100%);">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-9 col-lg-7 col-xl-6">
+
+        <div class="text-center mb-4">
+          <i class="bi bi-book-half" style="font-size:2.5rem;color:#c8922a;"></i>
+          <h2 class="mt-2" style="font-family:'Playfair Display',serif;color:#fff;">Create Account</h2>
+          <p class="text-white-50 small">Join the LibraTrack community</p>
+        </div>
+
+        <div class="card shadow-lg border-0" style="border-radius:16px;">
+          <div class="card-body p-4 p-sm-5">
+            <form method="POST" novalidate>
+              {{ form.hidden_tag() }}
+
+              <div class="row g-3">
+                <div class="col-sm-6">
+                  {{ form.first_name.label(class="form-label fw-500") }}
+                  {{ form.first_name(class="form-control" + (' is-invalid' if form.first_name.errors else '')) }}
+                  {% for e in form.first_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-sm-6">
+                  {{ form.last_name.label(class="form-label fw-500") }}
+                  {{ form.last_name(class="form-control" + (' is-invalid' if form.last_name.errors else '')) }}
+                  {% for e in form.last_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-12">
+                  {{ form.email.label(class="form-label fw-500") }}
+                  {{ form.email(class="form-control" + (' is-invalid' if form.email.errors else ''),
+                                placeholder="you@example.com") }}
+                  {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-sm-6">
+                  {{ form.phone.label(class="form-label fw-500") }}
+                  {{ form.phone(class="form-control" + (' is-invalid' if form.phone.errors else '')) }}
+                  {% for e in form.phone.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-sm-6">
+                  {{ form.date_of_birth.label(class="form-label fw-500") }}
+                  {{ form.date_of_birth(class="form-control" + (' is-invalid' if form.date_of_birth.errors else ''),
+                                        type="date") }}
+                  {% for e in form.date_of_birth.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-12">
+                  {{ form.address.label(class="form-label fw-500") }}
+                  {{ form.address(class="form-control", rows=2, placeholder="Optional") }}
+                </div>
+                <div class="col-sm-6">
+                  {{ form.password.label(class="form-label fw-500") }}
+                  <div class="input-group">
+                    {{ form.password(class="form-control" + (' is-invalid' if form.password.errors else ''),
+                                     id="pwd1", placeholder="Min 8 chars") }}
+                    <button class="btn btn-outline-secondary" type="button"
+                            onclick="togglePwd('pwd1',this)"><i class="bi bi-eye"></i></button>
+                    {% for e in form.password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                  </div>
+                </div>
+                <div class="col-sm-6">
+                  {{ form.confirm_password.label(class="form-label fw-500") }}
+                  <div class="input-group">
+                    {{ form.confirm_password(class="form-control" + (' is-invalid' if form.confirm_password.errors else ''),
+                                              id="pwd2", placeholder="Repeat password") }}
+                    <button class="btn btn-outline-secondary" type="button"
+                            onclick="togglePwd('pwd2',this)"><i class="bi bi-eye"></i></button>
+                    {% for e in form.confirm_password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4">
+                {{ form.submit(class="btn btn-primary w-100 py-2 fw-600") }}
+              </div>
+            </form>
+
+            <hr class="my-4">
+            <p class="text-center small text-muted mb-0">
+              Already have an account?
+              <a href="{{ url_for('auth.login') }}" class="fw-600">Sign in</a>
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function togglePwd(id, btn) {
+  const f = document.getElementById(id);
+  const show = f.type === 'password';
+  f.type = show ? 'text' : 'password';
+  btn.innerHTML = show ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+}
+</script>
+{% endblock %}

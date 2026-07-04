@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-person-plus me-2"></i>{{ title }}</h1>
+  <a href="{{ url_for('admin.user_list') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+</div>
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="lms-card p-4">
+      <form method="POST" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+          <div class="col-sm-6">
+            {{ form.first_name.label(class="form-label fw-500") }}
+            {{ form.first_name(class="form-control" + (' is-invalid' if form.first_name.errors else '')) }}
+            {% for e in form.first_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="col-sm-6">
+            {{ form.last_name.label(class="form-label fw-500") }}
+            {{ form.last_name(class="form-control" + (' is-invalid' if form.last_name.errors else '')) }}
+            {% for e in form.last_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          {% if action == 'create' %}
+          <div class="col-12">
+            {{ form.email.label(class="form-label fw-500") }}
+            {{ form.email(class="form-control" + (' is-invalid' if form.email.errors else '')) }}
+            {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          {% endif %}
+          <div class="col-sm-6">
+            {{ form.phone.label(class="form-label fw-500") }}
+            {{ form.phone(class="form-control") }}
+          </div>
+          <div class="col-sm-6">
+            {{ form.role.label(class="form-label fw-500") }}
+            {{ form.role(class="form-select") }}
+          </div>
+          <div class="col-12">
+            {{ form.address.label(class="form-label fw-500") }}
+            {{ form.address(class="form-control", rows=2) }}
+          </div>
+          {% if action == 'create' %}
+          <div class="col-sm-6">
+            {{ form.password.label(class="form-label fw-500") }}
+            {{ form.password(class="form-control" + (' is-invalid' if form.password.errors else '')) }}
+            {% for e in form.password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="col-sm-6">
+            {{ form.confirm.label(class="form-label fw-500") }}
+            {{ form.confirm(class="form-control" + (' is-invalid' if form.confirm.errors else '')) }}
+            {% for e in form.confirm.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+          </div>
+          {% endif %}
+          <div class="col-12">
+            <div class="form-check form-switch">
+              {{ form.is_active(class="form-check-input") }}
+              {{ form.is_active.label(class="form-check-label fw-500") }}
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 d-flex gap-2">
+          {{ form.submit(class="btn btn-primary px-4") }}
+          <a href="{{ url_for('admin.user_list') }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

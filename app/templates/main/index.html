@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}LibraTrack – University Library{% endblock %}
+
+{% block content %}
+<!-- HERO -->
+<section class="hero-section">
+  <div class="container position-relative">
+    <div class="row align-items-center">
+      <div class="col-lg-6">
+        <p class="text-uppercase fw-600 mb-2" style="color:var(--lms-accent);letter-spacing:2px;font-size:.85rem;">
+          University Library Management
+        </p>
+        <h1 class="hero-title mb-4">
+          Your Gateway to<br>Knowledge & Learning
+        </h1>
+        <p class="lead mb-4" style="opacity:.85;">
+          Discover thousands of books, manage your borrows, and track your
+          reading journey — all in one place.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="{{ url_for('auth.login') }}" class="btn btn-accent btn-lg px-4">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+          </a>
+          <a href="{{ url_for('auth.register') }}" class="btn btn-outline-light btn-lg px-4">
+            <i class="bi bi-person-plus me-2"></i>Join Free
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-6 d-none d-lg-flex justify-content-center">
+        <i class="bi bi-book-half" style="font-size:12rem;opacity:.15;color:#fff;"></i>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="public-stats mt-5">
+      <div class="row g-3">
+        <div class="col-6 col-md-3">
+          <div class="stat-item">
+            <div class="stat-number">{{ stats.total_books }}</div>
+            <div class="stat-label">Books in Collection</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-item">
+            <div class="stat-number">{{ stats.total_members }}</div>
+            <div class="stat-label">Active Members</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-item">
+            <div class="stat-number">{{ stats.total_borrows }}</div>
+            <div class="stat-label">Books Borrowed</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-item">
+            <div class="stat-number">{{ stats.total_categories }}</div>
+            <div class="stat-label">Categories</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED BOOKS -->
+<section class="py-5">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <h2 class="page-title mb-0">Recently Added</h2>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-sm">
+        View All <i class="bi bi-arrow-right ms-1"></i>
+      </a>
+    </div>
+    {% if featured_books %}
+    <div class="row g-3">
+      {% for book in featured_books %}
+      <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+        <div class="book-card">
+          <img src="{{ url_for('static', filename='images/covers/' + (book.cover_image or 'default_cover.jpg')) }}"
+               alt="{{ book.title }}" class="book-cover"
+               onerror="this.src='{{ url_for('static', filename='images/default_cover.jpg') }}'">
+          <div class="book-card-body">
+            <div class="book-title">{{ book.title }}</div>
+            <div class="book-author">{{ book.author }}</div>
+            <div class="mt-auto pt-2">
+              <span class="badge {% if book.is_available %}bg-success{% else %}bg-secondary{% endif %} book-badge">
+                {{ 'Available' if book.is_available else 'Borrowed' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-book"></i>
+      <p>No books yet. <a href="{{ url_for('auth.login') }}">Log in to get started.</a></p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="py-5 bg-white border-top">
+  <div class="container">
+    <h2 class="page-title text-center mb-4">Why LibraTrack?</h2>
+    <div class="row g-4">
+      {% set features = [
+        ('bi-search', 'Powerful Search', 'Find any book by title, author, ISBN, or category instantly.'),
+        ('bi-calendar-check', 'Borrow Tracking', 'Know exactly when your books are due and get overdue alerts.'),
+        ('bi-currency-dollar', 'Fine Management', 'Automatic overdue fine calculation with payment receipts.'),
+        ('bi-bar-chart-line', 'Analytics & Reports', 'Rich dashboards and exportable reports for administrators.'),
+        ('bi-shield-check', 'Secure & Role-Based', 'Admin, librarian, and member roles with separate permissions.'),
+        ('bi-phone', 'Fully Responsive', 'Works perfectly on desktop, tablet, and mobile devices.'),
+      ] %}
+      {% for icon, title, desc in features %}
+      <div class="col-md-4">
+        <div class="d-flex gap-3">
+          <div class="flex-shrink-0">
+            <div class="avatar-circle" style="width:44px;height:44px;font-size:1.2rem;background:var(--lms-primary);">
+              <i class="bi {{ icon }}"></i>
+            </div>
+          </div>
+          <div>
+            <h6 class="fw-600 mb-1">{{ title }}</h6>
+            <p class="text-muted small mb-0">{{ desc }}</p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="py-5" style="background:var(--lms-primary);color:#fff;">
+  <div class="container text-center">
+    <h2 class="mb-3" style="font-family:'Playfair Display',serif;">Ready to Start?</h2>
+    <p class="mb-4 opacity-75">Join thousands of readers managing their library experience with LibraTrack.</p>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-accent btn-lg px-5">
+      Create Free Account <i class="bi bi-arrow-right ms-2"></i>
+    </a>
+  </div>
+</section>
+{% endblock %}

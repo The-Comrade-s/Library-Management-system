@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h1>
+  <span class="text-muted small">Welcome back, {{ current_user.first_name }}</span>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-primary">
+      <i class="bi bi-journals stat-icon"></i>
+      <div>
+        <div class="stat-value">{{ stats.total_books }}</div>
+        <div class="stat-label">Total Books</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-success">
+      <i class="bi bi-check-circle stat-icon"></i>
+      <div>
+        <div class="stat-value">{{ stats.available_books }}</div>
+        <div class="stat-label">Available Copies</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-warning">
+      <i class="bi bi-arrow-left-right stat-icon"></i>
+      <div>
+        <div class="stat-value">{{ stats.borrowed_books }}</div>
+        <div class="stat-label">Borrowed</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-danger">
+      <i class="bi bi-exclamation-triangle stat-icon"></i>
+      <div>
+        <div class="stat-value">{{ stats.overdue_books }}</div>
+        <div class="stat-label">Overdue</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-info">
+      <i class="bi bi-people stat-icon"></i>
+      <div>
+        <div class="stat-value">{{ stats.total_users }}</div>
+        <div class="stat-label">Members</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-purple">
+      <i class="bi bi-tags stat-icon"></i>
+      <div>
+        <div class="stat-value">{{ stats.total_categories }}</div>
+        <div class="stat-label">Categories</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#d63384,#e05c99);">
+      <i class="bi bi-currency-dollar stat-icon"></i>
+      <div>
+        <div class="stat-value">${{ '%.0f'|format(stats.total_fines) }}</div>
+        <div class="stat-label">Unpaid Fines</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#20c997,#0d9488);">
+      <i class="bi bi-receipt stat-icon"></i>
+      <div>
+        <div class="stat-value">${{ '%.0f'|format(stats.fines_collected) }}</div>
+        <div class="stat-label">Fines Collected</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-8">
+    <div class="lms-card p-4">
+      <h6 class="fw-600 mb-3"><i class="bi bi-bar-chart me-2"></i>Monthly Borrow Activity</h6>
+      <div class="chart-container">
+        <canvas id="monthlyChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="lms-card p-4">
+      <h6 class="fw-600 mb-3"><i class="bi bi-pie-chart me-2"></i>Books by Category</h6>
+      <div class="chart-container">
+        <canvas id="categoryChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tables Row -->
+<div class="row g-4">
+  <!-- Recent Borrows -->
+  <div class="col-lg-7">
+    <div class="lms-card">
+      <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+        <h6 class="fw-600 mb-0"><i class="bi bi-clock-history me-2"></i>Recent Borrows</h6>
+        <a href="{{ url_for('borrow.all_borrows') }}" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      {% if recent_borrows %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Member</th><th>Book</th><th>Due Date</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in recent_borrows %}
+            <tr class="{{ 'overdue-row' if b.is_overdue else '' }}">
+              <td>
+                <div class="fw-500 small">{{ b.user.full_name }}</div>
+                <div class="text-muted" style="font-size:.75rem;">{{ b.user.member_id }}</div>
+              </td>
+              <td>
+                <div class="small fw-500" style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                  {{ b.book.title }}
+                </div>
+              </td>
+              <td class="small">{{ b.due_date.strftime('%d %b %Y') }}</td>
+              <td>
+                {% if b.status == 'returned' %}
+                  <span class="badge badge-returned">Returned</span>
+                {% elif b.is_overdue %}
+                  <span class="badge badge-overdue">Overdue</span>
+                {% else %}
+                  <span class="badge badge-borrowed">Borrowed</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state py-4">
+        <i class="bi bi-inbox"></i><p>No borrows yet.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Overdue Alert -->
+  <div class="col-lg-5">
+    <div class="lms-card">
+      <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+        <h6 class="fw-600 mb-0 text-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i>Overdue Books
+        </h6>
+        <a href="{{ url_for('borrow.overdue_borrows') }}" class="btn btn-sm btn-outline-danger">View All</a>
+      </div>
+      {% if overdue_borrows %}
+      <div class="list-group list-group-flush">
+        {% for b in overdue_borrows %}
+        <div class="list-group-item px-3 py-2">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="small fw-600">{{ b.book.title }}</div>
+              <div class="text-muted" style="font-size:.75rem;">
+                {{ b.user.full_name }} &bull; Due {{ b.due_date.strftime('%d %b') }}
+              </div>
+            </div>
+            <span class="badge bg-danger">{{ b.days_overdue }}d</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state py-4">
+        <i class="bi bi-check-circle text-success"></i>
+        <p class="text-success">No overdue books!</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Popular Books -->
+    <div class="lms-card mt-4">
+      <div class="p-3 border-bottom">
+        <h6 class="fw-600 mb-0"><i class="bi bi-star me-2"></i>Most Borrowed</h6>
+      </div>
+      {% if popular_books %}
+      <div class="list-group list-group-flush">
+        {% for title, count in popular_books %}
+        <div class="list-group-item px-3 py-2 d-flex justify-content-between align-items-center">
+          <div class="small fw-500" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            {{ title }}
+          </div>
+          <span class="badge bg-primary rounded-pill">{{ count }}×</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state py-3"><p class="small">No data yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3 mt-2">
+  <div class="col-12">
+    <div class="lms-card p-3">
+      <h6 class="fw-600 mb-3">Quick Actions</h6>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="{{ url_for('books.add_book') }}" class="btn btn-primary btn-sm">
+          <i class="bi bi-plus-circle me-1"></i>Add Book
+        </a>
+        <a href="{{ url_for('admin.create_user') }}" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-person-plus me-1"></i>Add Member
+        </a>
+        <a href="{{ url_for('borrow.all_borrows') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-list-ul me-1"></i>All Borrows
+        </a>
+        <a href="{{ url_for('borrow.all_fines') }}" class="btn btn-outline-warning btn-sm">
+          <i class="bi bi-currency-dollar me-1"></i>Manage Fines
+        </a>
+        <a href="{{ url_for('reports.index') }}" class="btn btn-outline-info btn-sm">
+          <i class="bi bi-bar-chart-line me-1"></i>Reports
+        </a>
+        <a href="{{ url_for('reports.export_overdue_csv') }}" class="btn btn-outline-success btn-sm">
+          <i class="bi bi-download me-1"></i>Export Overdue CSV
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const monthlyLabels = {{ monthly_data|map(attribute='month')|list|tojson }};
+const monthlyCounts = {{ monthly_data|map(attribute='count')|list|tojson }};
+LMS.barChart('monthlyChart', monthlyLabels, monthlyCounts, 'Borrows');
+
+const catLabels = {{ category_stats|map(attribute=0)|list|tojson }};
+const catCounts = {{ category_stats|map(attribute=1)|list|tojson }};
+const catColors = ['#1a3a5c','#c8922a','#198754','#0dcaf0','#d63384',
+                   '#6f42c1','#fd7e14','#20c997','#0d6efd','#dc3545'];
+LMS.doughnutChart('categoryChart', catLabels, catCounts, catColors);
+</script>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-person-circle me-2"></i>My Profile</h1>
+</div>
+
+<div class="row g-4">
+  <!-- Profile Card -->
+  <div class="col-md-4">
+    <div class="lms-card p-4 text-center">
+      <div class="avatar-circle mx-auto mb-3"
+           style="width:80px;height:80px;font-size:2rem;">
+        {{ current_user.first_name[0] }}{{ current_user.last_name[0] }}
+      </div>
+      <h5 class="fw-600">{{ current_user.full_name }}</h5>
+      <span class="badge bg-primary mb-2">{{ current_user.role|title }}</span>
+      <p class="text-muted small mb-1"><i class="bi bi-envelope me-1"></i>{{ current_user.email }}</p>
+      <p class="text-muted small mb-1"><i class="bi bi-credit-card me-1"></i>{{ current_user.member_id }}</p>
+      {% if current_user.phone %}
+      <p class="text-muted small mb-1"><i class="bi bi-telephone me-1"></i>{{ current_user.phone }}</p>
+      {% endif %}
+      <hr>
+      <div class="row text-center g-2">
+        <div class="col-6">
+          <div class="fw-700 text-primary" style="font-size:1.3rem;">{{ current_user.active_borrows_count }}</div>
+          <small class="text-muted">Active Borrows</small>
+        </div>
+        <div class="col-6">
+          <div class="fw-700 text-danger" style="font-size:1.3rem;">${{ '%.2f'|format(current_user.total_unpaid_fines) }}</div>
+          <small class="text-muted">Unpaid Fines</small>
+        </div>
+      </div>
+      <hr>
+      <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-primary btn-sm w-100">
+        <i class="bi bi-shield-lock me-1"></i>Change Password
+      </a>
+    </div>
+  </div>
+
+  <!-- Edit Form -->
+  <div class="col-md-8">
+    <div class="lms-card p-4">
+      <h5 class="fw-600 mb-4"><i class="bi bi-pencil me-2"></i>Edit Profile</h5>
+      <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="row g-3">
+          <div class="col-sm-6">
+            {{ form.first_name.label(class="form-label fw-500") }}
+            {{ form.first_name(class="form-control") }}
+          </div>
+          <div class="col-sm-6">
+            {{ form.last_name.label(class="form-label fw-500") }}
+            {{ form.last_name(class="form-control") }}
+          </div>
+          <div class="col-sm-6">
+            {{ form.phone.label(class="form-label fw-500") }}
+            {{ form.phone(class="form-control") }}
+          </div>
+          <div class="col-sm-6">
+            {{ form.date_of_birth.label(class="form-label fw-500") }}
+            {{ form.date_of_birth(class="form-control", type="date") }}
+          </div>
+          <div class="col-12">
+            {{ form.address.label(class="form-label fw-500") }}
+            {{ form.address(class="form-control", rows=3) }}
+          </div>
+        </div>
+        <div class="mt-4">
+          {{ form.submit(class="btn btn-primary px-4") }}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

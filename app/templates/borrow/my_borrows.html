@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}My Borrows{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-bookmark-check me-2"></i>My Borrows</h1>
+</div>
+
+<div class="d-flex gap-2 mb-4 flex-wrap">
+  {% for s, label in [('all','All'),('borrowed','Active'),('returned','Returned')] %}
+  <a href="{{ url_for('borrow.my_borrows', status=s) }}"
+     class="btn btn-sm {{ 'btn-primary' if status == s else 'btn-outline-secondary' }}">
+    {{ label }}
+  </a>
+  {% endfor %}
+</div>
+
+{% if borrows.items %}
+<div class="lms-card">
+  <div class="table-responsive">
+    <table class="table lms-table mb-0">
+      <thead>
+        <tr><th>Book</th><th>Author</th><th>Borrowed</th><th>Due Date</th><th>Returned</th><th>Status</th><th>Fine</th></tr>
+      </thead>
+      <tbody>
+        {% for b in borrows.items %}
+        <tr class="{{ 'overdue-row' if b.is_overdue and b.status != 'returned' else '' }}">
+          <td>
+            <a href="{{ url_for('books.book_detail', book_id=b.book_id) }}" class="fw-500 small text-decoration-none">
+              {{ b.book.title }}
+            </a>
+          </td>
+          <td class="small text-muted">{{ b.book.author }}</td>
+          <td class="small">{{ b.borrow_date.strftime('%d %b %Y') }}</td>
+          <td class="small">
+            {{ b.due_date.strftime('%d %b %Y') }}
+            {% if b.is_overdue and b.status != 'returned' %}
+            <br><span class="text-danger small">{{ b.days_overdue }}d overdue</span>
+            {% elif b.status == 'borrowed' %}
+            <br><span class="text-muted small">{{ b.days_remaining }}d left</span>
+            {% endif %}
+          </td>
+          <td class="small">{{ b.return_date.strftime('%d %b %Y') if b.return_date else '—' }}</td>
+          <td>
+            {% if b.status == 'returned' %}<span class="badge badge-returned">Returned</span>
+            {% elif b.is_overdue %}<span class="badge badge-overdue">Overdue</span>
+            {% else %}<span class="badge badge-borrowed">Borrowed</span>
+            {% endif %}
+          </td>
+          <td class="small">
+            {% if b.fine %}
+              <span class="badge {{ 'badge-paid' if b.fine.is_paid else ('badge-waived' if b.fine.is_waived else 'badge-unpaid') }}">
+                ${{ '%.2f'|format(b.fine.amount_float) }} ({{ b.fine.status }})
+              </span>
+            {% elif b.is_overdue and b.status == 'borrowed' %}
+              <span class="text-danger small">${{ '%.2f'|format(b.calculated_fine) }} (est.)</span>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if borrows.pages > 1 %}
+<nav class="mt-4 d-flex justify-content-center">
+  <ul class="pagination">
+    {% if borrows.has_prev %}
+    <li class="page-item"><a class="page-link" href="{{ url_for('borrow.my_borrows', page=borrows.prev_num, status=status) }}"><i class="bi bi-chevron-left"></i></a></li>
+    {% endif %}
+    {% for p in borrows.iter_pages() %}
+      {% if p %}
+      <li class="page-item {{ 'active' if p == borrows.page }}">
+        <a class="page-link" href="{{ url_for('borrow.my_borrows', page=p, status=status) }}">{{ p }}</a>
+      </li>
+      {% endif %}
+    {% endfor %}
+    {% if borrows.has_next %}
+    <li class="page-item"><a class="page-link" href="{{ url_for('borrow.my_borrows', page=borrows.next_num, status=status) }}"><i class="bi bi-chevron-right"></i></a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+  <i class="bi bi-bookmark"></i>
+  <p>No borrows yet. <a href="{{ url_for('books.list_books') }}">Browse books to borrow.</a></p>
+</div>
+{% endif %}
+{% endblock %}

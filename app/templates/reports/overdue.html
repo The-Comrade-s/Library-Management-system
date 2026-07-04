@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Overdue Report{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Overdue Books Report</h1>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('reports.export_overdue_csv') }}" class="btn btn-outline-success btn-sm"><i class="bi bi-download me-1"></i>Export CSV</a>
+    <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Reports</a>
+  </div>
+</div>
+
+{% if overdue %}
+<div class="row g-3 mb-4">
+  <div class="col-md-4"><div class="stat-card stat-danger"><i class="bi bi-exclamation-circle stat-icon"></i><div><div class="stat-value">{{ overdue|length }}</div><div class="stat-label">Overdue Books</div></div></div></div>
+  <div class="col-md-4"><div class="stat-card stat-warning"><i class="bi bi-currency-dollar stat-icon"></i><div><div class="stat-value">${{ '%.2f'|format(total_potential_fines) }}</div><div class="stat-label">Potential Fines</div></div></div></div>
+  <div class="col-md-4"><div class="stat-card stat-primary"><i class="bi bi-calendar-x stat-icon"></i><div><div class="stat-value">{{ (overdue|sum(attribute='days_overdue') / overdue|length)|round(1) if overdue else 0 }}</div><div class="stat-label">Avg. Days Overdue</div></div></div></div>
+</div>
+<div class="lms-card">
+  <div class="table-responsive">
+    <table class="table lms-table mb-0">
+      <thead><tr><th>Member</th><th>Book</th><th>Due Date</th><th>Days Overdue</th><th>Est. Fine</th><th>Phone</th></tr></thead>
+      <tbody>
+        {% for b in overdue %}
+        <tr class="overdue-row">
+          <td><div class="fw-500 small">{{ b.user.full_name }}</div><div class="text-muted" style="font-size:.72rem;">{{ b.user.member_id }} · {{ b.user.email }}</div></td>
+          <td class="small fw-500">{{ b.book.title[:45] }}{% if b.book.title|length > 45 %}…{% endif %}</td>
+          <td class="small text-danger fw-600">{{ b.due_date.strftime('%d %b %Y') }}</td>
+          <td><span class="badge bg-danger">{{ b.days_overdue }} days</span></td>
+          <td class="fw-700 text-danger">${{ '%.2f'|format(b.calculated_fine) }}</td>
+          <td class="small">{{ b.user.phone or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="empty-state"><i class="bi bi-check-circle text-success" style="opacity:1;font-size:4rem;"></i><p class="text-success fs-5">No overdue books!</p></div>
+{% endif %}
+{% endblock %}
