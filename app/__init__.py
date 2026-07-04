@@ -90,9 +90,12 @@ def create_app(config_name=None):
     os.makedirs(covers_dir, exist_ok=True)
 
     # ─── Database Init & Seed ─────────────────────────────────────────────
-    with app.app_context():
+with app.app_context():
+    try:
         db.create_all()
         seed_initial_data(app)
+    except Exception as e:
+        app.logger.warning(f"Database initialization skipped: {e}")
 
     return app
 
