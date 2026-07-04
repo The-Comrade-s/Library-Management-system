@@ -97,7 +97,7 @@ def create_app(config_name=None):
         except Exception as e:
             app.logger.warning(f"Database initialization skipped: {e}")
 
-    return app
+return app
 
 def register_error_handlers(app):
     """Register custom error page handlers."""
