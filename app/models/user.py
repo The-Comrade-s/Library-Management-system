@@ -33,19 +33,29 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
 
     # ─── Profile ─────────────────────────────────────────────────────────
-    profile_picture = db.Column(db.String(255), nullable=True,
-                                default='default_avatar.png')
+    profile_picture = db.Column(
+        db.String(255),
+        nullable=True,
+        default='default_avatar.png'
+    )
     date_of_birth = db.Column(db.Date, nullable=True)
 
     # ─── Role & Status ────────────────────────────────────────────────────
-    role = db.Column(db.Enum('admin', 'librarian', 'member', name='user_roles'),
-                     nullable=False, default='member')
+    role = db.Column(
+        db.Enum('admin', 'librarian', 'member', name='user_roles'),
+        nullable=False,
+        default='member'
+    )
     is_active = db.Column(db.Boolean, nullable=False, default=True)
 
     # ─── Timestamps ───────────────────────────────────────────────────────
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False,
-                           default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
     last_login = db.Column(db.DateTime, nullable=True)
 
     # ─── Password Reset ───────────────────────────────────────────────────
@@ -53,18 +63,19 @@ class User(UserMixin, db.Model):
     reset_token_expiry = db.Column(db.DateTime, nullable=True)
 
     # ─── Relationships ────────────────────────────────────────────────────
-borrows = db.relationship(
-    'Borrow',
-    foreign_keys='Borrow.user_id',
-    back_populates='user',
-    lazy='dynamic',
-    cascade='all, delete-orphan'
-)
-issued_borrows = db.relationship(
-    'Borrow',
-    foreign_keys='Borrow.issued_by',
-    lazy='dynamic'
-)
+    borrows = db.relationship(
+        'Borrow',
+        foreign_keys='Borrow.user_id',
+        back_populates='user',
+        lazy='dynamic',
+        cascade='all, delete-orphan'
+    )
+
+    issued_borrows = db.relationship(
+        'Borrow',
+        foreign_keys='Borrow.issued_by',
+        lazy='dynamic'
+    )
 
     # ─── Properties ──────────────────────────────────────────────────────
     @property
@@ -85,7 +96,6 @@ issued_borrows = db.relationship(
 
     @property
     def can_manage(self):
-        """Admin and librarian can manage the library."""
         return self.role in ('admin', 'librarian')
 
     @property
@@ -95,19 +105,25 @@ issued_borrows = db.relationship(
     @property
     def total_unpaid_fines(self):
         from app.models.fine import Fine
+
         result = db.session.query(db.func.sum(Fine.amount)).filter(
             Fine.user_id == self.id,
             Fine.status == 'unpaid'
         ).scalar()
+
         return float(result) if result else 0.0
 
     @property
     def age(self):
         if self.date_of_birth:
             today = date.today()
-            return today.year - self.date_of_birth.year - (
-                (today.month, today.day) <
-                (self.date_of_birth.month, self.date_of_birth.day)
+            return (
+                today.year
+                - self.date_of_birth.year
+                - (
+                    (today.month, today.day)
+                    < (self.date_of_birth.month, self.date_of_birth.day)
+                )
             )
         return None
 
@@ -124,13 +140,12 @@ issued_borrows = db.relationship(
         db.session.commit()
 
     def __repr__(self):
-        return f'<User {self.member_id}: {self.full_name} ({self.role})>'
+        return f"<User {self.member_id}: {self.full_name} ({self.role})>"
 
 
 @login_manager.user_loader
 def load_user(user_id):
     """
     Flask-Login callback to reload the user object from the user_id in the session.
-    Called on every request for authenticated users.
     """
-    return db.session.get(User, int(user_id))
+    return User.query.get(int(user_id))
