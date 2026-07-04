@@ -53,10 +53,18 @@ class User(UserMixin, db.Model):
     reset_token_expiry = db.Column(db.DateTime, nullable=True)
 
     # ─── Relationships ────────────────────────────────────────────────────
-    borrows = db.relationship('Borrow', back_populates='user',
-                              lazy='dynamic', cascade='all, delete-orphan')
-    fines = db.relationship('Fine', back_populates='user',
-                            lazy='dynamic', cascade='all, delete-orphan')
+borrows = db.relationship(
+    'Borrow',
+    foreign_keys='Borrow.user_id',
+    back_populates='user',
+    lazy='dynamic',
+    cascade='all, delete-orphan'
+)
+issued_borrows = db.relationship(
+    'Borrow',
+    foreign_keys='Borrow.issued_by',
+    lazy='dynamic'
+)
 
     # ─── Properties ──────────────────────────────────────────────────────
     @property
