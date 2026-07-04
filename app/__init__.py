@@ -92,7 +92,7 @@ def create_app(config_name=None):
     # ─── Database Init & Seed ─────────────────────────────────────────────
     with app.app_context():
         try:
-            db.create_all()
+            db.create_all(checkfirst=True)
             seed_initial_data(app)
         except Exception as e:
             app.logger.warning(f"Database initialization skipped: {e}")
