@@ -13,4 +13,3 @@ gunicorn
 email-validator
 SQLAlchemy
 alembic
-streamlit
