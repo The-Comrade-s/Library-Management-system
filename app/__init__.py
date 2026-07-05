@@ -1,9 +1,5 @@
 """
 app/__init__.py - Application Factory
-======================================
-Creates and configures the Flask application using the Factory Pattern.
-This allows multiple instances (testing, production) without conflicts.
-Save at: LMS/app/__init__.py
 """
 
 import os
@@ -17,7 +13,6 @@ from flask_wtf.csrf import CSRFProtect
 
 from config import config
 
-# ─── Extension Instances (no app bound yet) ──────────────────────────────────
 db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
@@ -27,22 +22,12 @@ csrf = CSRFProtect()
 
 
 def create_app(config_name=None):
-    """
-    Application Factory Function.
-    Creates and returns a fully configured Flask application instance.
-    
-    Args:
-        config_name: 'development', 'testing', or 'production'
-    """
     if config_name is None:
         config_name = os.environ.get('FLASK_ENV', 'development')
 
     app = Flask(__name__)
-
-    # ─── Load Configuration ───────────────────────────────────────────────
     app.config.from_object(config[config_name])
 
-    # ─── Initialise Extensions ────────────────────────────────────────────
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
@@ -50,13 +35,11 @@ def create_app(config_name=None):
     mail.init_app(app)
     csrf.init_app(app)
 
-    # ─── Login Manager Settings ───────────────────────────────────────────
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.login_message_category = 'warning'
     login_manager.session_protection = 'strong'
 
-    # ─── Register Blueprints ──────────────────────────────────────────────
     from app.auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
 
@@ -75,33 +58,26 @@ def create_app(config_name=None):
     from app.reports import reports_bp
     app.register_blueprint(reports_bp, url_prefix='/reports')
 
-    # ─── Main Routes (Index / Home) ───────────────────────────────────────
     from app.main import main_bp
     app.register_blueprint(main_bp)
 
-    # ─── Error Handlers ───────────────────────────────────────────────────
     register_error_handlers(app)
-
-    # ─── Context Processors ───────────────────────────────────────────────
     register_context_processors(app)
 
-    # ─── Create Upload Folder ─────────────────────────────────────────────
     covers_dir = os.path.join(app.root_path, 'static', 'images', 'covers')
     os.makedirs(covers_dir, exist_ok=True)
 
-    # ─── Database Init & Seed ─────────────────────────────────────────────
     with app.app_context():
         try:
             db.create_all(checkfirst=True)
             seed_initial_data(app)
         except Exception as e:
-            app.logger.warning(f"Database initialization skipped: {e}")
+            app.logger.warning(f"Database init skipped: {e}")
 
     return app
 
-def register_error_handlers(app):
-    """Register custom error page handlers."""
 
+def register_error_handlers(app):
     @app.errorhandler(403)
     def forbidden(e):
         return render_template('errors/403.html'), 403
@@ -117,17 +93,12 @@ def register_error_handlers(app):
 
 
 def register_context_processors(app):
-    """Inject common variables into every template context."""
-
     @app.context_processor
     def inject_globals():
         from app.models.borrow import Borrow
-        from app.models.book import Book
         from flask_login import current_user
 
-        unread_count = 0
         overdue_count = 0
-
         if current_user.is_authenticated:
             try:
                 if current_user.role in ('admin', 'librarian'):
@@ -144,22 +115,14 @@ def register_context_processors(app):
             except Exception:
                 overdue_count = 0
 
-        return {
-            'overdue_count': overdue_count,
-            'app_name': 'LibraTrack',
-        }
+        return {'overdue_count': overdue_count, 'app_name': 'LibraTrack'}
 
 
 def seed_initial_data(app):
-    """
-    Create the default admin account and sample categories on first run.
-    Safe to call repeatedly – only inserts if records don't exist.
-    """
     from app.models.user import User
     from app.models.book import Category
     from app import bcrypt as _bcrypt
 
-    # Create admin user if not present
     if not User.query.filter_by(email=app.config['ADMIN_EMAIL']).first():
         admin = User(
             first_name=app.config.get('ADMIN_FIRST_NAME', 'System'),
@@ -174,7 +137,6 @@ def seed_initial_data(app):
         )
         db.session.add(admin)
 
-    # Seed default categories
     default_categories = [
         ('Fiction', 'Novels, short stories, and other imaginative works'),
         ('Non-Fiction', 'Factual books including biographies and history'),
